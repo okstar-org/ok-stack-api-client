@@ -1,0 +1,13 @@
+target
+
+.idea
+*.iml
+
+.mvn
+.db
+logs
+
+thirdparty/REST-API-Client
+
+.rsync.sh
+
