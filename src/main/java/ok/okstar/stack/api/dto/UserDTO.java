@@ -13,16 +13,33 @@
 
 package ok.okstar.stack.api.dto;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.okstar.platform.common.core.web.bean.DTO;
 
 @Data
+@Builder
 @EqualsAndHashCode(callSuper = true)
 public class UserDTO extends DTO {
+    /**
+     * 用户名
+     */
     private String username;
+
+    /**
+     * 昵称
+     */
+    private String nickname;
+
     /**
      * 现实名称
      */
     private String displayName;
+
+    /**
+     * 头像
+     */
+    private String avatar;
+
 }

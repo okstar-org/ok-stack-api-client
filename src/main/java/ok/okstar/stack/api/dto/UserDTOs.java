@@ -19,7 +19,5 @@ import java.util.List;
 
 @Data
 public class UserDTOs {
-    private int code;
-    private String msg;
-    List<UserDTO> data;
+    private List<UserDTO> data;
 }
