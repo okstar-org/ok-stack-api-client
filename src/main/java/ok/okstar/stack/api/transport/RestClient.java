@@ -243,7 +243,7 @@ public final class RestClient {
 				|| response.getStatus() == Response.Status.FORBIDDEN.getStatusCode()
 				|| response.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
 			ErrorResponse errorResponse = response.readEntity(ErrorResponse.class);
-			throw new ClientErrorException(errorResponse.toString(), response);
+			throw new ClientErrorException(String.valueOf(errorResponse), response);
 		} else if (response.getStatus() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
 			throw new WebApplicationException("Server Error", response);
 		} else {

@@ -19,7 +19,7 @@ import ok.okstar.stack.api.OkStackApiClient;
 import ok.okstar.stack.api.auth.AuthenticationToken;
 import ok.okstar.stack.api.dto.UserDTOs;
 import org.junit.jupiter.api.Test;
-import org.okstar.platform.common.core.defined.SystemDefines;
+import org.okstar.platform.core.web.OkHttpDefines;
 
 
 @Slf4j
@@ -28,7 +28,7 @@ class UserChannelTest {
     @Test
     void search() {
         AuthenticationToken token = new AuthenticationToken("okstar", "okstar");
-        token.addHeader(SystemDefines.Header_X_OK_from, "ok-app://fake-app-uuid");
+        token.addHeader(OkHttpDefines.Header_X_OK_from, "ok-app://fake-app-uuid");
         var instance = OkStackApiClient.getInstance("http://localhost:8000", token);
 
         UserChannel channel = instance.getChannelFactory().createUserChannel();

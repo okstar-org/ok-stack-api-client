@@ -14,8 +14,15 @@
 package ok.okstar.stack.api.dto;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.okstar.platform.common.core.web.bean.DTO;
 
 @Data
-public class UserDTO {
+@EqualsAndHashCode(callSuper = true)
+public class UserDTO extends DTO {
     private String username;
+    /**
+     * 现实名称
+     */
+    private String displayName;
 }
