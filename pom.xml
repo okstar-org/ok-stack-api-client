@@ -15,57 +15,49 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.okstar.stack.api</groupId>
+    <version>24.09.00-1-SNAPSHOT</version>
+    <groupId>io.github.joy1024</groupId>
     <artifactId>OkStack-API-Client</artifactId>
-    <version>1.0-SNAPSHOT</version>
 
     <name>OkStack-API-Client</name>
-
+    <description>A OkStack Java API Client</description>
+    <url>https://github.com/okstar-org/ok-stack-api-client</url>
 
     <properties>
-        <maven.compiler.release>8</maven.compiler.release>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
 
         <xml.version>4.0.1</xml.version>
         <jersey.version>3.1.5</jersey.version>
         <slf4j.version>1.7.36</slf4j.version>
     </properties>
 
-
     <profiles>
         <profile>
-            <id>signed</id>
+            <id>central</id>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>ossrh</id>
+                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+            </distributionManagement>
+
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                                <configuration>
-                                    <keyname>${gpg.keyname}</keyname>
-                                    <passphraseServerId>${gpg.keyname}</passphraseServerId>
-                                </configuration>
-                            </execution>
-                        </executions>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.5.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                        </configuration>
                     </plugin>
-<!--                    <plugin>-->
-<!--                        <groupId>org.sonatype.plugins</groupId>-->
-<!--                        <artifactId>nexus-staging-maven-plugin</artifactId>-->
-<!--                        <version>1.6.3</version>-->
-<!--                        <extensions>true</extensions>-->
-<!--                        <configuration>-->
-<!--                            <serverId>ossrh</serverId>-->
-<!--                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>-->
-<!--                            <autoReleaseAfterClose>true</autoReleaseAfterClose>-->
-<!--                        </configuration>-->
-<!--                    </plugin>-->
                 </plugins>
             </build>
         </profile>
@@ -86,15 +78,6 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.sonatype.central</groupId>-->
-<!--                <artifactId>central-publishing-maven-plugin</artifactId>-->
-<!--                <version>0.5.0</version>-->
-<!--                <extensions>true</extensions>-->
-<!--                <configuration>-->
-<!--                    <publishingServerId>central</publishingServerId>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -105,6 +88,24 @@
                         <goals>
                             <goal>jar</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <keyname>${gpg.keyname}</keyname>
+                            <passphraseServerId>${gpg.keyname}</passphraseServerId>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -163,9 +164,10 @@
             <version>5.10.1</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.okstar.platform</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>common-base</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
@@ -179,24 +181,51 @@
             <id>okstar-nexus-snapshots</id>
             <url>https://nexus.okstar.org.cn/repository/maven-snapshots/</url>
         </snapshotRepository>
-
-<!--        <repository>-->
-<!--            <id>central</id>-->
-<!--            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
-<!--        </repository>-->
-<!--        <snapshotRepository>-->
-<!--            <id>central</id>-->
-<!--            <url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
-<!--        </snapshotRepository>-->
     </distributionManagement>
 
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.22.2</version>
-            </plugin>
-        </plugins>
-    </reporting>
+
+    <developers>
+        <developer>
+            <name>https://okstar.org</name>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/okstar-org/ok-stack-api-client</connection>
+        <developerConnection>scm:git:git://github.com/okstar-org/ok-stack-api-client</developerConnection>
+        <url>https://github.com/okstar-org/ok-stack-api-client</url>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>manual</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
+
+    <repositories>
+        <repository>
+            <id>okstar-nexus-releases</id>
+            <url>https://nexus.okstar.org.cn/repository/maven-releases/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>okstar-nexus-snapshots</id>
+            <url>https://nexus.okstar.org.cn/repository/maven-snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
 </project>

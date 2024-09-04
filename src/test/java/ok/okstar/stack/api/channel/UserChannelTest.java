@@ -14,12 +14,12 @@
 package ok.okstar.stack.api.channel;
 
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
+
+import ok.okstar.platform.common.OkHttpDefines;
 import ok.okstar.stack.api.OkStackApiClient;
 import ok.okstar.stack.api.auth.AuthenticationToken;
 import ok.okstar.stack.api.dto.UserDTOs;
 import org.junit.jupiter.api.Test;
-import org.okstar.platform.core.web.OkHttpDefines;
 
 
 @Slf4j
@@ -29,7 +29,7 @@ class UserChannelTest {
     void search() {
         AuthenticationToken token = new AuthenticationToken("okstar", "okstar");
         token.addHeader(OkHttpDefines.Header_X_OK_from, "ok-app://fake-app-uuid");
-        var instance = OkStackApiClient.getInstance("http://localhost:8000", token);
+        OkStackApiClient instance = OkStackApiClient.getInstance("http://localhost:8000", token);
 
         UserChannel channel = instance.getChannelFactory().createUserChannel();
         UserDTOs result = channel.search("SJdVr4Swzf2f");

@@ -11,31 +11,19 @@
  * /
  */
 
-package ok.okstar.stack.api.dto;
-
-import lombok.*;
-import ok.okstar.platform.common.DTO;
+package ok.okstar.platform.common;
 
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class UserDTO extends DTO {
-    /**
-     * 用户名
-     */
-    private String username;
+/**
+ * HttpDefines，主要针对http定义OkStar相关业务
+ */
+public interface OkHttpDefines {
+
+    //用户名字段
+    String Header_X_OK_username="X-OK-username";
 
     /**
-     * 昵称
+     * 来自应用，格式："ok-app://{app uuid}"
      */
-    private String nickname;
-
-    /**
-     * 头像
-     */
-    private String avatar;
-
+    String Header_X_OK_from="X-OK-from";
 }

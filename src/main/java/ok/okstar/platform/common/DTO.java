@@ -11,31 +11,18 @@
  * /
  */
 
-package ok.okstar.stack.api.dto;
+package ok.okstar.platform.common;
 
-import lombok.*;
-import ok.okstar.platform.common.DTO;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.io.Serializable;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class UserDTO extends DTO {
-    /**
-     * 用户名
-     */
-    private String username;
-
-    /**
-     * 昵称
-     */
-    private String nickname;
-
-    /**
-     * 头像
-     */
-    private String avatar;
-
+/**
+ * 数据传输实体
+ */
+@Setter
+@Getter
+public abstract class DTO implements Serializable {
+    private String uuid;
 }
