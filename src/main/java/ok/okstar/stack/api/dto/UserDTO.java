@@ -38,4 +38,9 @@ public class UserDTO extends DTO {
      */
     private String avatar;
 
+    /**
+     * 邮箱
+     */
+    private String email;
+
 }
