@@ -168,6 +168,7 @@
         <dependency>
             <groupId>io.github.joy1024</groupId>
             <artifactId>common-base</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 
