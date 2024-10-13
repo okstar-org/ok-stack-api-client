@@ -15,30 +15,31 @@ package ok.okstar.stack.api.channel;
 
 import jakarta.ws.rs.WebApplicationException;
 import lombok.extern.slf4j.Slf4j;
+import ok.okstar.stack.api.dto.InstanceDTOs;
 import ok.okstar.stack.api.dto.UserDTOs;
 import ok.okstar.stack.api.transport.RestClient;
 
 import java.util.HashMap;
 
 @Slf4j
-class UserChannelImpl extends AbsChannel implements UserChannel {
+class InstanceChannelImpl extends AbsChannel implements InstanceChannel {
 
-    public UserChannelImpl(RestClient client) {
+    public InstanceChannelImpl(RestClient client) {
         super(client);
     }
 
     /**
-     * search the users.
+     * Gets the apps.
      *
-     * @return the users
+     * @return the apps
      */
     @Override
-    public UserDTOs search(String query) {
-        String path = "user/search";
+    public InstanceDTOs findByBiz(String biz) {
+        String path = "instance";
         try {
             HashMap<String, String> m = new HashMap<>();
-            m.put("q", query);
-            UserDTOs s = restClient.get(path, UserDTOs.class, m);
+            m.put("biz", biz);
+            InstanceDTOs s = restClient.get(path, InstanceDTOs.class, m);
             log.info("json=>{}", s);
             return s;
         } catch (Exception e) {
