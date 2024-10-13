@@ -14,7 +14,7 @@
 package ok.okstar.stack.api.dto;
 
 import lombok.*;
-import ok.okstar.platform.common.DTO;
+import org.okstar.platform.common.core.web.bean.DTO;
 
 
 @Data
