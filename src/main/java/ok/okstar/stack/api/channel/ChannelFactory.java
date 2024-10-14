@@ -31,4 +31,8 @@ public class ChannelFactory {
     public UserChannel createUserChannel() {
         return new UserChannelImpl(restClient);
     }
+
+    public InstanceChannel createInstanceChannel() {
+        return new InstanceChannelImpl(restClient);
+    }
 }
