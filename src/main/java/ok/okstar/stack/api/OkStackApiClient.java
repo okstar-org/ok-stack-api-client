@@ -18,6 +18,7 @@ import ok.okstar.stack.api.channel.ChannelFactory;
 
 
 public class OkStackApiClient {
+
     private static OkStackApiClient client;
     private final ChannelFactory channelFactory;
 
@@ -25,7 +26,7 @@ public class OkStackApiClient {
         channelFactory = new ChannelFactory(url, authenticationToken);
     }
 
-    public static OkStackApiClient getInstance(String url, AuthenticationToken authenticationToken) {
+    public static synchronized OkStackApiClient getInstance(String url, AuthenticationToken authenticationToken) {
         if (client == null) {
             client = new OkStackApiClient(url, authenticationToken);
         }

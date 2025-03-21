@@ -35,4 +35,8 @@ public class ChannelFactory {
     public InstanceChannel createInstanceChannel() {
         return new InstanceChannelImpl(restClient);
     }
+
+    public AccountChannel createAccountChannel() {
+        return new AccountChannelImpl(restClient);
+    }
 }
