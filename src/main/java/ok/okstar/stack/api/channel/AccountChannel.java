@@ -14,7 +14,7 @@
 package ok.okstar.stack.api.channel;
 
 import ok.okstar.stack.api.dto.AccountBindDTO;
-import ok.okstar.stack.api.dto.AccountDTO;
+import ok.okstar.stack.api.dto.BindResultDTO;
 
 /**
  * 帐号通道
@@ -29,6 +29,6 @@ public interface AccountChannel {
      * @param bind 绑定信息
      * @return Account 帐号
      */
-    AccountDTO bind(AccountBindDTO bind);
+    BindResultDTO bind(AccountBindDTO bind);
 
 }

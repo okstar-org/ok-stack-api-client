@@ -13,17 +13,17 @@
 
 package ok.okstar.stack.api.dto;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
  * 帐号实体
  */
 @Data
-public class AccountDTO {
-    //用户名（唯一标识）
-    private String username;
-    //UUID
-    private String uuid;
-    //头像
-    private String avatar;
+@Builder
+public class BindResultDTO {
+    /**
+     * 订阅ID
+     */
+    private Long subscribeId;
 }

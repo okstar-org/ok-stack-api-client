@@ -13,9 +13,12 @@
 
 package ok.okstar.stack.api.dto;
 
+import lombok.Data;
+
 /**
  * App实体
  */
+@Data
 public class AppInfoDTO {
     //应用名称
     private String name;

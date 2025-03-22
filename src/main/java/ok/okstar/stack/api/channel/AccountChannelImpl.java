@@ -17,9 +17,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import ok.okstar.stack.api.dto.AccountBindDTO;
-import ok.okstar.stack.api.dto.AccountDTO;
-import ok.okstar.stack.api.dto.InstanceDTOs;
-import ok.okstar.stack.api.dto.UserDTOs;
+import ok.okstar.stack.api.dto.BindResultDTO;
 import ok.okstar.stack.api.transport.RestClient;
 
 import java.util.HashMap;
@@ -40,12 +38,12 @@ class AccountChannelImpl extends AbsChannel implements AccountChannel {
      * @return Account
      */
     @Override
-    public AccountDTO bind(AccountBindDTO bind) {
+    public BindResultDTO bind(AccountBindDTO bind) {
         try {
             String path = "account/bind";
             HashMap<String, String> m = new HashMap<>();
             try (Response s = restClient.post(path, bind, m)) {
-                return s.readEntity(AccountDTO.class);
+                return s.readEntity(BindResultDTO.class);
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
