@@ -1,45 +1,28 @@
-/*
- * * Copyright (c) 2022 船山信息 chuanshaninfo.com
- * OkStack is licensed under Mulan PubL v2.
- * You can use this software according to the terms and conditions of the Mulan
- * PubL v2. You may obtain a copy of Mulan PubL v2 at:
- *          http://license.coscl.org.cn/MulanPubL-2.0
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PubL v2 for more details.
- * /
- */
-
 package ok.okstar.stack.api.transport;
 
-
-import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.HttpMethod;
-import jakarta.ws.rs.NotAuthorizedException;
-import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.*;
 import jakarta.ws.rs.ext.ContextResolver;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import ok.okstar.stack.api.auth.AuthenticationMode;
 import ok.okstar.stack.api.auth.AuthenticationToken;
 import ok.okstar.stack.api.exception.ErrorResponse;
 import org.eclipse.persistence.jaxb.JAXBContextProperties;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.glassfish.jersey.moxy.json.MoxyJsonConfig;
 import org.glassfish.jersey.moxy.json.MoxyJsonFeature;
 import org.glassfish.jersey.moxy.xml.MoxyXmlFeature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -47,253 +30,93 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * The Class RestClient.
  */
+@Setter
+@Getter
+@Slf4j
 public final class RestClient {
 
-	/** The Constant LOG. */
-	private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
+	static SSLContext sslContext;
 
-	/** The uri. */
+	static {
+		sslContext = createSSLContext();
+	}
+
+	private static SSLContext createSSLContext() {
+		TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+			public X509Certificate[] getAcceptedIssuers() {
+				return null;
+			}
+
+			public void checkClientTrusted(X509Certificate[] certs, String authType) {
+			}
+
+			public void checkServerTrusted(X509Certificate[] certs, String authType) {
+			}
+		}};
+
+		try {
+			var context = SSLContext.getInstance("TLS");
+			context.init(null, trustAllCerts, new SecureRandom());
+//            HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
+			return context;
+		} catch (KeyManagementException | NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	static ClientConfig clientConfig;
+	static ExecutorService executorService;
+
+	static {
+		executorService = Executors.newCachedThreadPool();
+	}
+
+	/**
+	 * The uri.
+	 */
 	private String baseURI;
 
-	/** The token. */
+	/**
+	 * The token.
+	 */
 	private AuthenticationToken token;
 
-	/** The password. */
+	/**
+	 * The password.
+	 */
 	private String password;
 
-	/** The connection timeout. */
+	/**
+	 * The connection timeout.
+	 */
 	private int connectionTimeout;
 
-	/** The headers. */
+	/**
+	 * The headers.
+	 */
 	private MultivaluedMap<String, Object> headers;
 
-	/** The media type. */
+	/**
+	 * The media type.
+	 */
 	private SupportedMediaType mediaType;
 
-	/**
-	 * Gets the.
-	 *
-	 * @param <T>
-	 *                         the generic type
-	 * @param restPath
-	 *                         the rest path
-	 * @param expectedResponse
-	 *                         the expected response
-	 * @param queryParams
-	 *                         the query params
-	 * @return the t
-	 */
-	public <T> T get(
-			String restPath,
-			Class<T> expectedResponse,
-			Map<String, String> queryParams) {
-		LOG.info("GET: {}", restPath);
-		return call(HttpMethod.GET,
-				restPath,
-				expectedResponse,
-				null,
-				queryParams);
-	}
+	private final Configuration configuration;
 
-	public <T>  T post(
-			String restPath,
-			Class<T> expectedResponse,
-			Object payload,
-			Map<String, String> queryParams
-		) {
-		LOG.info("POST: {}", restPath);
-		return call(HttpMethod.POST,
-				restPath,
-				expectedResponse,
-				payload,
-				queryParams);
-	}
-
-	/**
-	 * Post.
-	 *
-	 * @param restPath
-	 *                    the rest path
-	 * @param payload
-	 *                    the payload
-	 * @param queryParams
-	 *                    the query params
-	 * @return the response
-	 */
-	public Response post(
-			String restPath,
-			Object payload,
-			Map<String, String> queryParams) {
-		LOG.debug("POST: {}", restPath);
-		return call(HttpMethod.POST,
-				restPath,
-				Response.class,
-				payload,
-				queryParams);
-	}
-
-	/**
-	 * Put.
-	 *
-	 * @param restPath
-	 *                    the rest path
-	 * @param payload
-	 *                    the payload
-	 * @param queryParams
-	 *                    the query params
-	 * @return the response
-	 */
-	public Response put(
-			String restPath,
-			Object payload,
-			Map<String, String> queryParams) {
-		LOG.debug("PUT: {}", restPath);
-		return call(HttpMethod.PUT,
-				restPath,
-				Response.class,
-				payload,
-		queryParams);
-	}
-
-	/**
-	 * Delete.
-	 *
-	 * @param restPath
-	 *                    the rest path
-	 * @param queryParams
-	 *                    the query params
-	 * @return the response
-	 */
-	public Response delete(
-			String restPath,
-			Map<String, String> queryParams) {
-		LOG.debug("DELETE: {}", restPath);
-		return call(HttpMethod.DELETE,
-				restPath,
-				Response.class,
-				null,
-		queryParams);
-	}
-
-	/**
-	 * Gets the.
-	 *
-	 * @param <T>
-	 *                         the generic type
-	 * @param methodName
-	 *                         the method name
-	 * @param restPath
-	 *                         the rest path
-	 * @param expectedResponse
-	 *                         the clazz
-	 * @param payload
-	 *                         the payload
-	 * @param queryParams
-	 *                         the query params
-	 * @return the t
-	 */
-	@SuppressWarnings("unchecked")
-	public <T> T call(
-			String methodName,
-			String restPath,
-			Class<T> expectedResponse,
-			Object payload,
-			Map<String, String> queryParams) {
-		WebTarget webTarget = createWebTarget(restPath, queryParams);
-		Response result = webTarget
-				.request()
-				.headers(headers)
-				.accept(mediaType.getMediaType())
-				.method(methodName,
-						Entity.entity(payload, mediaType.getMediaType()),
-						Response.class);
-
-		if (expectedResponse.getName().equals(Response.class.getName())) {
-			return (T) result;
-		}
-
-		if (result != null && isStatusCodeOK(result, restPath)) {
-			return (T) result.readEntity(expectedResponse);
-		}
-
-		throw new WebApplicationException("Unhandled response", result);
-	}
-
-	/**
-	 * Checks if is status code ok.
-	 *
-	 * @param response
-	 *                 the response
-	 * @param uri
-	 *                 the uri
-	 * @return true, if is status code ok
-	 */
-	private boolean isStatusCodeOK(Response response, String uri) {
-		if (response.getStatus() == Response.Status.OK.getStatusCode()
-				|| response.getStatus() == Response.Status.CREATED.getStatusCode()) {
-			return true;
-		} else if (response.getStatus() == Response.Status.UNAUTHORIZED.getStatusCode()) {
-			throw new NotAuthorizedException("UNAUTHORIZED: Your credentials are wrong. "
-					+ "Please check your username/password or the secret key.", response);
-		} else if (response.getStatus() == Response.Status.CONFLICT.getStatusCode()
-				|| response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()
-				|| response.getStatus() == Response.Status.FORBIDDEN.getStatusCode()
-				|| response.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
-			ErrorResponse errorResponse = response.readEntity(ErrorResponse.class);
-			throw new ClientErrorException(String.valueOf(errorResponse), response);
-		} else if (response.getStatus() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
-			throw new WebApplicationException("Server Error", response);
-		} else {
-			throw new WebApplicationException("Unsupported status", response);
-		}
-	}
-
-	/**
-	 * Creates the web target.
-	 *
-	 * @param restPath
-	 *                    the rest path
-	 * @param queryParams
-	 *                    the query params
-	 * @return the web target
-	 */
-	private WebTarget createWebTarget(String restPath, Map<String, String> queryParams) {
-		WebTarget webTarget;
-		try {
-			URI u;
-			if (!baseURI.endsWith("/") && !restPath.startsWith("/")) {
-				u = new URI(this.baseURI + "/" + restPath);
-			}else {
-				u = new URI(this.baseURI + restPath);
-			}
-			LOG.info("Call=> {}", u);
-			Client client = createRestClient();
-			webTarget = client.target(u);
-			if (queryParams != null && !queryParams.isEmpty()) {
-				for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-					if (entry.getKey() != null && entry.getValue() != null) {
-						LOG.debug("PARAM: {} = {}", entry.getKey(), entry.getValue());
-						webTarget = webTarget.queryParam(entry.getKey(), entry.getValue());
-					}
-				}
-			}
-
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Something went wrong by creating the client: " + e);
-		}
-
-		return webTarget;
-	}
+//    private final Client client;
 
 	/**
 	 * The Constructor.
 	 *
-	 * @param builder
-	 *                the builder
+	 * @param builder the builder
 	 */
 	private RestClient(RestClientBuilder builder) {
 		this.baseURI = builder.baseURI;
@@ -301,37 +124,61 @@ public final class RestClient {
 		this.setHeaders(builder.headers);
 		this.token = builder.token;
 		this.mediaType = builder.mediaType;
+		this.configuration = createConfiguration();
+//        this.client = createRestClient();
+	}
+
+
+	private Configuration createConfiguration() {
+		ClientConfig config = new ClientConfig();
+		// Set connection timeout
+		if (this.connectionTimeout != 0) {
+			config.property(ClientProperties.CONNECT_TIMEOUT, this.connectionTimeout);
+			config.property(ClientProperties.READ_TIMEOUT, this.connectionTimeout);
+		}
+		config.property("jersey.config.apache.client.maxTotal", 100);
+		config.property("jersey.config.apache.client.maxPerRoute", 20);
+
+		config.register(MoxyJsonFeature.class)
+				.register(MoxyXmlFeature.class)
+				.register(createMoxyJsonResolver());
+		config.executorService(executorService);
+//        config.property("jersey.config.client.async.executor", config.getExecutorService());
+		config.register(new org.glassfish.jersey.spi.ExecutorServiceProvider() {
+
+			@Override
+			public ExecutorService getExecutorService() {
+				return executorService;
+			}
+
+			@Override
+			public void dispose(ExecutorService executorService) {
+//                executorService.shutdown();
+			}
+		});
+
+
+//        if (this.baseURI.startsWith("https")) {
+//            //ssl
+//            config..sslContext(sslContext)
+//                    .hostnameVerifier((hostname, sslSession) -> {
+//                        log.info("Verify host:{}", hostname);
+//                        return true;
+//                    });
+//        }
+
+
+		return config;
 	}
 
 	/**
-	 * Creater rest client.
+	 * Create rest client.
 	 *
 	 * @return the client
-	 * @throws KeyManagementException
-	 *                                  the key management exception
-	 * @throws NoSuchAlgorithmException
-	 *                                  the no such algorithm exception
 	 */
-	private Client createRestClient() throws KeyManagementException, NoSuchAlgorithmException {
-		ClientConfig clientConfig = new ClientConfig();
-		// Set connection timeout
-		if (this.connectionTimeout != 0) {
-			clientConfig.property(ClientProperties.CONNECT_TIMEOUT, this.connectionTimeout);
-			clientConfig.property(ClientProperties.READ_TIMEOUT, this.connectionTimeout);
-		}
-
-		clientConfig
-				.register(MoxyJsonFeature.class)
-				.register(MoxyXmlFeature.class)
-				.register(createMoxyJsonResolver());
-
-		Client client = null;
-		if (this.baseURI.startsWith("https")) {
-			client = createSLLClient(clientConfig);
-		} else {
-			client = ClientBuilder.newClient(clientConfig);
-		}
-
+	private Client createRestClient() {
+		Client client = JerseyClientBuilder.createClient(configuration);
+		log.info("Created client:{}", client);
 		return client;
 	}
 
@@ -344,73 +191,39 @@ public final class RestClient {
 	}
 
 	/**
-	 * Creates the sll client.
-	 *
-	 * @param clientConfig
-	 *                     the client config
-	 * @return the client config
-	 * @throws KeyManagementException
-	 *                                  the key management exception
-	 * @throws NoSuchAlgorithmException
-	 *                                  the no such algorithm exception
-	 */
-	private Client createSLLClient(ClientConfig clientConfig)
-			throws KeyManagementException, NoSuchAlgorithmException {
-		TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
-			public X509Certificate[] getAcceptedIssuers() {
-				return null;
-			}
-
-			public void checkClientTrusted(X509Certificate[] certs, String authType) {
-			}
-
-			public void checkServerTrusted(X509Certificate[] certs, String authType) {
-			}
-		} };
-
-		SSLContext sc = SSLContext.getInstance("TLS");
-		sc.init(null, trustAllCerts, new SecureRandom());
-		HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-		ClientBuilder.newClient(clientConfig);
-
-		Client client = ClientBuilder.newBuilder()
-				.sslContext(sc)
-				.hostnameVerifier(new HostnameVerifier() {
-					public boolean verify(String s, SSLSession sslSession) {
-						return true;
-					}
-				})
-				.withConfig(clientConfig).build();
-
-		return client;
-	}
-
-	/**
 	 * The Class Builder.
 	 */
 	public static class RestClientBuilder {
 
-		/** The uri. */
+		/**
+		 * The uri.
+		 */
 		private String baseURI;
 
-		/** The connection timeout. */
+		/**
+		 * The connection timeout.
+		 */
 		private int connectionTimeout;
 
-		/** The headers. */
+		/**
+		 * The headers.
+		 */
 		private MultivaluedMap<String, Object> headers;
 
-		/** The token. */
+		/**
+		 * The token.
+		 */
 		private AuthenticationToken token;
 
-		/** The media type. */
+		/**
+		 * The media type.
+		 */
 		private SupportedMediaType mediaType;
 
 		/**
 		 * The Constructor.
 		 *
-		 * @param baseUri
-		 *                the base uri
+		 * @param baseUri the base uri
 		 */
 		public RestClientBuilder(String baseUri) {
 			this.headers = new MultivaluedHashMap<String, Object>();
@@ -420,8 +233,7 @@ public final class RestClient {
 		/**
 		 * Connection timeout.
 		 *
-		 * @param connectionTimeout
-		 *                          the connection timeout
+		 * @param connectionTimeout the connection timeout
 		 * @return the builder
 		 */
 		public RestClientBuilder connectionTimeout(int connectionTimeout) {
@@ -432,8 +244,7 @@ public final class RestClient {
 		/**
 		 * Authentication token.
 		 *
-		 * @param token
-		 *              the token
+		 * @param token the token
 		 * @return the rest client builder
 		 */
 		public RestClientBuilder authenticationToken(AuthenticationToken token) {
@@ -445,15 +256,13 @@ public final class RestClient {
 			}
 
 			this.token = token;
-			headers.putAll(token.getHeaders());
 			return this;
 		}
 
 		/**
 		 * Headers.
 		 *
-		 * @param headers
-		 *                the headers
+		 * @param headers the headers
 		 * @return the rest client builder
 		 */
 		public RestClientBuilder headers(MultivaluedMap<String, Object> headers) {
@@ -464,8 +273,7 @@ public final class RestClient {
 		/**
 		 * .
 		 *
-		 * @param mediaType
-		 *                  the mediaType
+		 * @param mediaType the mediaType
 		 * @return the rest client builder
 		 */
 		public RestClientBuilder mediaType(SupportedMediaType mediaType) {
@@ -484,117 +292,202 @@ public final class RestClient {
 
 	}
 
+
 	/**
-	 * Gets the uri.
+	 * Gets the
 	 *
-	 * @return the uri
+	 * @param <T>              the generic type
+	 * @param restPath         the rest path
+	 * @param expectedResponse the expected response
+	 * @param queryParams      the query params
+	 * @return the t
 	 */
-	public String getUri() {
-		return baseURI;
+	public <T> T get(
+			String restPath,
+			Class<T> expectedResponse,
+			Map<String, String> queryParams) {
+		log.info("GET: {}", restPath);
+		return call(HttpMethod.GET,
+				restPath,
+				expectedResponse,
+				null,
+				queryParams);
+	}
+
+	public <T> T post(
+			String restPath,
+			Class<T> expectedResponse,
+			Object payload,
+			Map<String, String> queryParams
+	) {
+		log.info("POST: {}", restPath);
+		return call(HttpMethod.POST,
+				restPath,
+				expectedResponse,
+				payload,
+				queryParams);
 	}
 
 	/**
-	 * Sets the uri.
+	 * Post.
 	 *
-	 * @param uri
-	 *            the new uri
+	 * @param restPath    the rest path
+	 * @param payload     the payload
+	 * @param queryParams the query params
+	 * @return the response
 	 */
-	public void setUri(String uri) {
-		this.baseURI = uri;
+	public Response post(
+			String restPath,
+			Object payload,
+			Map<String, String> queryParams) {
+		log.debug("POST: {}", restPath);
+		return call(HttpMethod.POST,
+				restPath,
+				Response.class,
+				payload,
+				queryParams);
 	}
 
 	/**
-	 * Gets the password.
+	 * Put.
 	 *
-	 * @return the password
+	 * @param restPath    the rest path
+	 * @param payload     the payload
+	 * @param queryParams the query params
+	 * @return the response
 	 */
-	public String getPassword() {
-		return password;
+	public Response put(
+			String restPath,
+			Object payload,
+			Map<String, String> queryParams) {
+		log.debug("PUT: {}", restPath);
+		return call(HttpMethod.PUT,
+				restPath,
+				Response.class,
+				payload,
+				queryParams);
 	}
 
 	/**
-	 * Sets the password.
+	 * Delete.
 	 *
-	 * @param password
-	 *                 the new password
+	 * @param restPath    the rest path
+	 * @param queryParams the query params
+	 * @return the response
 	 */
-	public void setPassword(String password) {
-		this.password = password;
+	public Response delete(
+			String restPath,
+			Map<String, String> queryParams) {
+		log.debug("DELETE: {}", restPath);
+		return call(HttpMethod.DELETE,
+				restPath,
+				Response.class,
+				null,
+				queryParams);
 	}
 
 	/**
-	 * Gets the connection timeout.
+	 * Gets the.
 	 *
-	 * @return the connection timeout
+	 * @param <T>          the generic type
+	 * @param methodName   the method name
+	 * @param restPath     the rest path
+	 * @param tClass the clazz
+	 * @param payload      the payload
+	 * @param queryParams  the query params
+	 * @return the t
 	 */
-	public int getConnectionTimeout() {
-		return connectionTimeout;
+	@SuppressWarnings("unchecked")
+	public <T> T call(
+			String methodName,
+			String restPath,
+			Class<T> tClass,
+			Object payload,
+			Map<String, String> queryParams) {
+
+		AtomicReference<T> result = new AtomicReference<>();
+		try {
+			log.info("Call=> {}", getBaseURI() + restPath);
+			createWebTarget(restPath, queryParams, webTarget -> {
+				var response = (webTarget
+						.request()
+						.headers(headers)
+						.accept(mediaType.getMediaType())
+						.method(methodName,
+								Entity.entity(payload, mediaType.getMediaType()),
+								Response.class));
+
+				if (tClass.getName().equals(Response.class.getName())) {
+					result.set((T) response);
+				}
+
+				if (isStatusCodeOK(response, restPath)) {
+					result.set((T) response.readEntity(tClass));
+				}
+			});
+		} catch (Exception e) {
+			throw new WebApplicationException("Call error:" + e.getMessage());
+		}
+		return result.get();
 	}
 
 	/**
-	 * Sets the connection timeout.
+	 * Checks if is status code ok.
 	 *
-	 * @param connectionTimeout
-	 *                          the new connection timeout
+	 * @param response the response
+	 * @param uri      the uri
+	 * @return true, if is status code ok
 	 */
-	public void setConnectionTimeout(int connectionTimeout) {
-		this.connectionTimeout = connectionTimeout;
+	private boolean isStatusCodeOK(Response response, String uri) {
+		if (response.getStatus() == Response.Status.OK.getStatusCode()
+				|| response.getStatus() == Response.Status.CREATED.getStatusCode()) {
+			return true;
+		} else if (response.getStatus() == Response.Status.UNAUTHORIZED.getStatusCode()) {
+			throw new NotAuthorizedException("UNAUTHORIZED: Your credentials are wrong. "
+					+ "Please check your username/password or the secret key.", response);
+		} else if (response.getStatus() == Response.Status.FORBIDDEN.getStatusCode()) {
+			throw new ForbiddenException(response);
+		} else if (response.getStatus() == Response.Status.CONFLICT.getStatusCode()
+				|| response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()
+				|| response.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
+			ErrorResponse errorResponse = response.readEntity(ErrorResponse.class);
+			throw new ClientErrorException(String.valueOf(errorResponse), response);
+		} else if (response.getStatus() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
+			throw new WebApplicationException("Server Error", response);
+		} else {
+			throw new WebApplicationException("Unsupported status", response);
+		}
 	}
 
 	/**
-	 * Gets the token.
+	 * Creates the web target.
 	 *
-	 * @return the token
+	 * @param restPath    the rest path
+	 * @param queryParams the query params
+	 * @param consumer    Consumer the webTarget
 	 */
-	public AuthenticationToken getToken() {
-		return token;
-	}
-
-	/**
-	 * Sets the token.
-	 *
-	 * @param token
-	 *              the token
-	 */
-	public void setToken(AuthenticationToken token) {
-		this.token = token;
-	}
-
-	/**
-	 * Gets the headers.
-	 *
-	 * @return the headers
-	 */
-	public MultivaluedMap<String, Object> getHeaders() {
-		return headers;
-	}
-
-	/**
-	 * Sets the headers.
-	 *
-	 * @param headers
-	 *                the headers
-	 */
-	public void setHeaders(MultivaluedMap<String, Object> headers) {
-		this.headers = headers;
-	}
-
-	/**
-	 * Gets the mediaType.
-	 *
-	 * @return the mediaType
-	 */
-	public SupportedMediaType getMediaType() {
-		return mediaType;
-	}
-
-	/**
-	 * Sets the mediaType.
-	 *
-	 * @param mediaType
-	 *                  the mediaType
-	 */
-	public void setMediaType(SupportedMediaType mediaType) {
-		this.mediaType = mediaType;
+	private void createWebTarget(String restPath,
+								 Map<String, String> queryParams,
+								 Consumer<WebTarget> consumer) {
+		try (Client client = createRestClient()) {
+			URI u;
+			if (!baseURI.endsWith("/") && !restPath.startsWith("/")) {
+				u = new URI(this.baseURI + "/" + restPath);
+			} else {
+				u = new URI(this.baseURI + restPath);
+			}
+			WebTarget webTarget = client.target(u);
+			if (queryParams != null) {
+				for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+					if (entry.getKey() != null && entry.getValue() != null) {
+						log.debug("Put query param: {} => {}", entry.getKey(), entry.getValue());
+						webTarget = webTarget.queryParam(entry.getKey(), entry.getValue());
+					}
+				}
+			}
+			consumer.accept(webTarget);
+		} catch (Exception e) {
+			throw new WebApplicationException("Something went wrong by creating the client: " + e);
+		}
 	}
 }
