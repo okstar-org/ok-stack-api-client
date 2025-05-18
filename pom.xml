@@ -211,17 +211,26 @@
         </dependency>
     </dependencies>
 
-<!--    <distributionManagement>-->
-<!--        <repository>-->
-<!--            <id>okstar-nexus-releases</id>-->
-<!--            <url>https://nexus.okstar.org.cn/repository/maven-releases/</url>-->
-<!--        </repository>-->
-<!--        <snapshotRepository>-->
-<!--            <id>okstar-nexus-snapshots</id>-->
-<!--            <url>https://nexus.okstar.org.cn/repository/maven-snapshots/</url>-->
-<!--        </snapshotRepository>-->
-<!--    </distributionManagement>-->
 
+    <distributionManagement>
+        <!--        <repository>-->
+        <!--            <id>okstar-nexus-releases</id>-->
+        <!--            <url>https://nexus.okstar.org.cn/repository/maven-releases/</url>-->
+        <!--        </repository>-->
+        <!--        <snapshotRepository>-->
+        <!--            <id>okstar-nexus-snapshots</id>-->
+        <!--            <url>https://nexus.okstar.org.cn/repository/maven-snapshots/</url>-->
+        <!--        </snapshotRepository>-->
+
+        <snapshotRepository>
+            <id>central</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>central</id>
+            <url>https://central.sonatype.com/repository/maven-releases/</url>
+        </repository>
+    </distributionManagement>
 
     <developers>
         <developer>
